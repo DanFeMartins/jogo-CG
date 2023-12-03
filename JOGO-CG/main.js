@@ -171,12 +171,18 @@ createTrilho(0.35,0)
 createTrilho(-0.35,0)
 
 
+
 function animate() {
   requestAnimationFrame(animate);
 
-  // camera.position.z -= 0.04; // ajusta a velocidade que percorre o eixo z, sempre negativamente
+  document.addEventListener('keydown', function(event) {
+    if(event.keyCode == 65) {
+      animate();
+    }
+  });
+  camera.position.z -= 0.04; // ajusta a velocidade que percorre o eixo z, sempre negativamente
   // camera.position.y -= 0.02;
   renderer.render(scene, camera);
 }
 
-animate();
+//função para reconhecer a tecla a para inciar animação
