@@ -1,8 +1,8 @@
 import THREE from './_base';
 import { scene } from '../main';
 
-export function createBox(x, z) { //função para criar uma caixa, de acordo com o eixo x e z
-  const boxTexture = new THREE.TextureLoader().load('caixa.jpg');
+export async function createBox(x, z) { //função para criar uma caixa, de acordo com o eixo x e z
+  const boxTexture = new THREE.TextureLoader().load('../assets/texturas/caixa.jpg');
   const material = new THREE.MeshStandardMaterial({
     map: boxTexture,
     metalness: 0,
@@ -17,4 +17,6 @@ export function createBox(x, z) { //função para criar uma caixa, de acordo com
   // Habilitar o lançamento de sombras pelo objeto da caixa
   box.castShadow = true;
   scene.add(box);
+
+  return box
 }

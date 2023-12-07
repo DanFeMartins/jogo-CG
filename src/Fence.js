@@ -1,7 +1,7 @@
 import THREE from './_base';
 import { scene } from '../main';
 
-export function createFence(x, z) {
+export async function createFence(x, z) {
   // aste da esquerda
   const woodTexture = new THREE.TextureLoader().load('assets/texturas/mine.jpg');
   const material = new THREE.MeshStandardMaterial({
@@ -39,4 +39,5 @@ export function createFence(x, z) {
   scene.add(cylinder)
   scene.add(box)
 
+  return box
 }
