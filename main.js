@@ -8,7 +8,7 @@ import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
 import { RectAreaLight } from 'three';
-// import { Light } from 'three';
+import { Light } from 'three';
 
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
@@ -52,25 +52,30 @@ light.shadow.camera.far = 500; // default
 scene.add( light, targetObject, ambientLight );
 light.target = targetObject;
 
+// const helper = new THREE.DirectionalLightHelper( light, 5 );
+// scene.add( helper );  
 
-
-const helper = new THREE.DirectionalLightHelper( light, 5 );
-scene.add( helper );  
-
-const helper1 = new THREE.CameraHelper( light.shadow.camera );
-scene.add( helper1 );
+// const helper1 = new THREE.CameraHelper( light.shadow.camera );
+// scene.add( helper1 );
 
 
 // const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
-const Ground = new THREE.PlaneGeometry(1.1, 200,3);
-const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
-const ground = new THREE.Mesh(Ground, material_ground);
-ground.castShadow = true;
-ground.receiveShadow = true;
-scene.add(ground);
-ground.rotation.x = -Math.PI / 2;
+function Ground(){
+  const Ground = new THREE.PlaneGeometry(1.1, 200,3);
+  const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const ground = new THREE.Mesh(Ground, material_ground);
 
+  ground.castShadow = true;
+  ground.receiveShadow = true;
+  scene.add(ground);
 
+  ground.rotation.x = -Math.PI / 2;
+} Ground()
+
+//cria os 3 trilhos do cenário
+createTrail(0, 0)
+createTrail(0.35, 0)
+createTrail(-0.35, 0)
 
 
 function resetGame() {
@@ -133,10 +138,7 @@ for (let i = 0; i < 20; i++) {
 
 
 
-//cria os 3 trilhos do cenário
-createTrail(0, 0)
-createTrail(0.35, 0)
-createTrail(-0.35, 0)
+
 
 const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
 
