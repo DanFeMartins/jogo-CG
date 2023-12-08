@@ -6,8 +6,7 @@ export async function createFence(x, z) {
   const woodTexture = new THREE.TextureLoader().load('assets/texturas/mine.jpg');
   const material = new THREE.MeshStandardMaterial({
     map: woodTexture,
-    metalness: 0,
-    roughness: 0
+    envMap : null
   });
   const geometry = new THREE.CylinderGeometry(0.01, 0.01, 1, 5);
   const cylinder = new THREE.Mesh(geometry, material); scene.add(cylinder);

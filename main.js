@@ -6,6 +6,10 @@ import { createTrain } from './src/Train';
 import { createCharacter } from './src/Character';
 import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
+import { createObj } from './src/random_gen';
+import { RectAreaLight } from 'three';
+// import { Light } from 'three';
+
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
 
@@ -13,59 +17,69 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
+  
 })
+
 
 function createEnvironment() {
   // CAMERA
-  camera.position.set(0, 0.5, 0);
+  camera.position.set(0, 0.75, 0);
 
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
-
+  renderer.shadowMap.enabled = true;
   renderer.render(scene, camera);
+  // renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 }
 createEnvironment()
 
-// linhas para auxiliar
-// const Grid = new THREE.GridHelper(200.50);
-// scene.add(Grid)
 
-// const helper = new THREE.CameraHelper( camera );
-// scene.add( helper );
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+const light = new THREE.DirectionalLight( 0xffffff, 3.5);
+const targetObject = new THREE.Object3D();
 
-function lights() {
-  for (let i = 0; i < 15; i++) {
-    const pointLight = new THREE.PointLight(0xffffff, 3);
-    pointLight.position.set(1, 2, -i * 2);
+light.position.set(-1, 9, 30);
+light.castShadow = true;
+light.receiveShadow = true;
+targetObject.position.set(0, 0, -40);
+light.shadow.mapSize.width = 1024; // default
+light.shadow.mapSize.height = 1024; // default
+light.shadow.camera.near = 0.5; // default
+light.shadow.camera.far = 500; // default
 
-    pointLight.intensity = 10;
 
-    pointLight.castShadow = true;
+scene.add( light, targetObject, ambientLight );
+light.target = targetObject;
 
-    scene.add(pointLight);
-    const lightHelper = new THREE.PointLightHelper(pointLight);
-    scene.add(lightHelper);
-  }
-}
-lights()
 
-function ground() {
-  const Ground = new THREE.PlaneGeometry(1.1, 100,3);
-  const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
-  const ground = new THREE.Mesh(Ground, material_ground);
-  scene.add(ground);
-  ground.rotation.x = -Math.PI / 2;
-}
-ground()
+
+const helper = new THREE.DirectionalLightHelper( light, 5 );
+scene.add( helper );  
+
+const helper1 = new THREE.CameraHelper( light.shadow.camera );
+scene.add( helper1 );
+
+
+// const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
+const Ground = new THREE.PlaneGeometry(1.1, 200,3);
+const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+const ground = new THREE.Mesh(Ground, material_ground);
+ground.castShadow = true;
+ground.receiveShadow = true;
+scene.add(ground);
+ground.rotation.x = -Math.PI / 2;
+
+
+
 
 function resetGame() {
   // Reset the positions of camera and character
-  camera.position.set(0, 0.5, 0);
+  camera.position.set(0, 0.75, 0);
+
   character.position.set(0, 0, -1);
 
-  // Reset any other game-related state or variables if needed
 
-  // Reset the flag to stop the movement
   flag = 0;
 }
 
@@ -106,48 +120,43 @@ let boxes = [] //array para guardar as caixas
 let fences = [] //array para guardar as cercas
 let trains = [] //array para guardar os trens
 
-//criação das caixas nas coordenadas do mundo
-boxes.push(await createBox(0, -8));
-boxes.push(await createBox(0.35, -8));
-boxes.push(await createBox(-0.35, -8));
-boxes.push(await createBox(0, -13));
-boxes.push(await createBox(0.35, -13));
-boxes.push(await createBox(-0.35, -13));
-boxes.push(await createBox(0, -15));
+
+// CRIAÇÃO DOS OBJETOS RANDOMICAMENTE
+for (let i = 0; i < 20; i++) {  
+  const valor = await createObj(); 
+  boxes.push(await createBox(valor.x, valor.z));
+  const valor2 = await createObj();
+  trains.push(await createTrain(valor2.x, valor2.z));
+  const valor3 = await createObj();
+  fences.push(await createFence(valor3.x, valor3.z));
+}
 
 
-//criação dos trens nas coordenadas de mundo
-trains.push(await createTrain(0.35, -5))
-trains.push(await createTrain(-0.35, -5))
-trains.push(await createTrain(0.35, -15))
-trains.push(await createTrain(-0.35, -15))
-trains.push(await createTrain(0.35, -20))
-trains.push(await createTrain(-0.35, -20))
-trains.push(await createTrain(0.35, -25))
 
-//criação das "cercas" no mundo
-fences.push(await createFence(0, -2));
-fences.push(await createFence(0.35, -2));
-fences.push(await createFence(-0.35, -2));
-fences.push(await createFence(0.35, -18));
-fences.push(await createFence(-0.35, -18));
-fences.push(await createFence(0, -25));
-fences.push(await createFence(0, -10));
-
+//cria os 3 trilhos do cenário
 createTrail(0, 0)
 createTrail(0.35, 0)
 createTrail(-0.35, 0)
 
 const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
+
+controls.zoomSpeed = 0.01; // Ajuste a sensibilidade do zoom aqui
 controls.enableDamping = true; //animação de movimentação da camera
 controls.target.set(0, 0, -10000); //para onde a camera aponta
 controls.rotateSpeed = 0.0001;
 function animate() {
   requestAnimationFrame(animate);
 
+  //movimentação do personagem
   if (flag == 1) {
     camera.position.z -= 0.04;
     character.position.z -= 0.04;
+  }
+  //stop
+  else if(flag == 0){
+    camera.position.z -= 0.0;
+    character.position.z -= 0.0;
+
   }
 
   controls.update();  //para movimentar a camera com o mouse
@@ -162,12 +171,24 @@ const y = 0;
 const x = 0;
 
 window.addEventListener('keydown', function (event) {
-  if (event.code === 'KeyR') {
+  //restart
+  if (event.code === 'KeyR') { 
     resetGame();
+    camera.position.set(0, 0.75, 0);
+
+
+  }
+  //pause
+  if(event.code === 'KeyP'){ 
+    if(flag == 0){
+      flag = 1
+    }
+    else{
+      flag = 0
+    }
   }
   //esquerda
   if (event.code === 'KeyA' && camera.position.x > -0.1) {
-    flag = 1
     camera.position.x -= 0.35;
     character.position.x -= 0.35;
   }
@@ -177,12 +198,13 @@ window.addEventListener('keydown', function (event) {
     character.position.x += 0.35;
   }
   //cima
-  if (event.code === 'KeyS' && camera.position.y > 0.3) {
+  
+  if (event.code === 'KeyS'/* && camera.position.y > 0.4*/) {
     camera.position.y -= 0.35
     character.position.y -= 0.35
   }
   //baixo
-  if (event.code === 'KeyW' && camera.position.y < 0.7) {
+  if (event.code === 'KeyW' /*&& camera.position.y < 1 */) {
     camera.position.y += 0.35;
     character.position.y += 0.35;
   }
