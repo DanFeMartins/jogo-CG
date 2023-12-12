@@ -9,7 +9,9 @@ import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
 import { RectAreaLight } from 'three';
 import { Light } from 'three';
-
+// import Tween.js if using modules
+// import { jump} from './src/animation';
+import * as TWEEN from '@tweenjs/tween.js';
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
 
@@ -52,8 +54,8 @@ light.shadow.camera.far = 500; // default
 scene.add( light, targetObject, ambientLight );
 light.target = targetObject;
 
-// const helper = new THREE.DirectionalLightHelper( light, 5 );
-// scene.add( helper );  
+const helper = new THREE.DirectionalLightHelper( light, 5 );
+scene.add( helper );  
 
 // const helper1 = new THREE.CameraHelper( light.shadow.camera );
 // scene.add( helper1 );
@@ -126,7 +128,7 @@ let fences = [] //array para guardar as cercas
 let trains = [] //array para guardar os trens
 
 
-// CRIAÇÃO DOS OBJETOS RANDOMICAMENTE
+//CRIAÇÃO DOS OBJETOS RANDOMICAMENTE
 for (let i = 0; i < 20; i++) {  
   const valor = await createObj(); 
   boxes.push(await createBox(valor.x, valor.z));
@@ -139,6 +141,116 @@ for (let i = 0; i < 20; i++) {
 
 
 
+function jump() {
+  const jumpHeight = 0.6; // Set your desired jump height
+  const jumpDuration = 350; // Set the duration of the jump in milliseconds
+
+  const initialCharacterY = 0
+
+  const tween1 = new TWEEN.Tween(character.position)
+    .to({ y: jumpHeight }, jumpDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.y = coords.y;
+    });
+
+  const tween2 = new TWEEN.Tween(character.position)
+    .to({ y: initialCharacterY }, jumpDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.y = coords.y;
+    });
+
+  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.start();
+}
+
+function slide(){
+  const slideDuration = 350; // Set the duration of the jump in milliseconds
+
+  const initialCharacterX = 0;
+  
+
+  const tween1 = new TWEEN.Tween(character.position)
+    .to({ y: -0.4 }, slideDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.y = coords.y;
+    });
+
+  const tween2 = new TWEEN.Tween(character.position)
+    .to({ y: initialCharacterX }, slideDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.y = coords.y;
+    });
+
+  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.start();
+
+}
+
+function left() {
+  const leftDuration = 120; // Set the duration of the jump in milliseconds
+  let final_pos; // Declare final_pos variable here
+
+  if (character.position.x === 0) {
+    final_pos = -0.35;
+  } else if (character.position.x === 0.35) {
+    final_pos = 0;
+  } else if (character.position.x === -0.35) {
+    return;
+  }
+
+  const tween1 = new TWEEN.Tween(character.position)
+    .to({ x: final_pos }, leftDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.x = coords.x;
+    });
+
+  const tween2 = new TWEEN.Tween(camera.position)
+    .to({ x: final_pos }, leftDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      camera.position.x = coords.x;
+    });
+
+  tween1.start();
+  tween2.start();
+}
+
+function right(){
+  const leftDuration = 120; // Set the duration of the jump in milliseconds
+
+  let final_pos
+
+  if (character.position.x === 0) { 
+    final_pos = 0.35;
+  } else if (character.position.x === 0.35) {
+    return;
+  } else if (character.position.x === -0.35) {
+    final_pos = 0;
+  }
+  const tween1 = new TWEEN.Tween(character.position)
+  .to({ x: final_pos }, leftDuration)
+  .easing(TWEEN.Easing.Quadratic.Out)
+  .onUpdate((coords) => {
+    character.position.x = coords.x;
+  });
+
+  const tween2 = new TWEEN.Tween(camera.position)
+  .to({ x: final_pos }, leftDuration)
+  .easing(TWEEN.Easing.Quadratic.Out)
+  .onUpdate((coords) => {
+    camera.position.x = coords.x;
+  });
+
+  tween1.start();
+  tween2.start();
+
+}
+
 
 const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
 
@@ -148,6 +260,7 @@ controls.target.set(0, 0, -10000); //para onde a camera aponta
 controls.rotateSpeed = 0.0001;
 function animate() {
   requestAnimationFrame(animate);
+  TWEEN.update();
 
   //movimentação do personagem
   if (flag == 1) {
@@ -191,26 +304,25 @@ window.addEventListener('keydown', function (event) {
   }
   //esquerda
   if (event.code === 'KeyA' && camera.position.x > -0.1) {
-    camera.position.x -= 0.35;
-    character.position.x -= 0.35;
+    left();
   }
   //direita
   if (event.code === 'KeyD' && camera.position.x < 0.2) {
-    camera.position.x += 0.35;
-    character.position.x += 0.35;
+    right();
   }
   //cima
   
-  if (event.code === 'KeyS'/* && camera.position.y > 0.4*/) {
-    camera.position.y -= 0.35
-    character.position.y -= 0.35
+  if (event.code === 'KeyS' && camera.position.y > 0.0) {
+    slide();
   }
-  //baixo
-  if (event.code === 'KeyW' /*&& camera.position.y < 1 */) {
-    camera.position.y += 0.35;
-    character.position.y += 0.35;
+
+  if (event.code === 'KeyW' && camera.position.y < 1 ) {
+    jump();
   }
+  
 })
+
+
 
 animate();// Add the following code after the camera position is set
 

@@ -8,8 +8,8 @@ export function createTrail(x, z) {
   const geometry_left = new THREE.BoxGeometry(0.01, 0.05, 280);
   const material = new THREE.MeshStandardMaterial({
     map: metalTexture,
-    metalness: 0.8,
-    roughness: 0.2
+    metalness: 1,
+    roughness: 1,
     
   });
 

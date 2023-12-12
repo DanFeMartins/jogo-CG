@@ -8,7 +8,7 @@ export function createCharacter() {
       const character = gltfScene.scene;
       character.rotation.y -= Math.PI / -2; // Rotate 90 degrees to the left
       character.scale.set(0.18, 0.18, 0.18);
-      character.position.set(0, 0, -1); // Move the model up 0.1 units
+      character.position.set(0, 0.03, -1.1); // Move the model up 0.1 units
 
       // Loop through all materials in the character and adjust properties
       character.traverse(child => {
