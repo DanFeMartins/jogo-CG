@@ -99,28 +99,28 @@ function checkCollision(object1, object2) {
 function checkCollisions() {
   // Check collision with fences
   fences.forEach((fence) => {
-    if (checkCollision(camera, fence) || checkCollision(character, fence)) {
-      // Handle collision with fence
+    if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
 
   // Check collision with boxes
   boxes.forEach((box) => {
-    if (checkCollision(camera, box) || checkCollision(character, box)) {
-      // Handle collision with box
+    if (camera && box && (checkCollision(camera, box) || checkCollision(character, box))) {
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
 
   // Check collision with trains
   trains.forEach((train) => {
-    if (checkCollision(camera, train) || checkCollision(character, train)) {
-      // Handle collision with train
+    if (camera && train && (checkCollision(camera, train) || checkCollision(character, train))) {
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
 }
+
+
+
 
 let character = await createCharacter() //criação do personagem
 let boxes = [] //array para guardar as caixas

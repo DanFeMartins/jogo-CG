@@ -24,14 +24,14 @@ export async function createTrain(x, z) { //função para c7iar trem, de acordo 
 
   const geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
   const material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
-  const mesh = new THREE.Mesh( geometry, material ) ;
+  const train = new THREE.Mesh( geometry, material ) ;
 
-  mesh.position.z = z;
-  mesh.position.x = -0.12 + x;
-  mesh.position.y = 0.07;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add( mesh );
+  train.position.z = z;
+  train.position.x = -0.12 + x;
+  train.position.y = 0.07;
+  train.castShadow = true;
+  train.receiveShadow = true;
+  scene.add( train );
 
 
   const geometry1 = new THREE.TorusGeometry( 3, 1, 16, 100 ); 
@@ -124,16 +124,16 @@ export async function createTrain(x, z) { //função para c7iar trem, de acordo 
   scene.add( torus7 );
   scene.add( torus8 );
   scene.add( capsule );
-  mesh.add(torus);
-  mesh.add(torus2);
-  mesh.add(torus3);
-  mesh.add(torus4);
-  mesh.add(torus5);
-  mesh.add(torus6);
-  mesh.add(torus7);
-  mesh.add(torus8);
-  mesh.add(capsule);
+  train.add(torus);
+  train.add(torus2);
+  train.add(torus3);
+  train.add(torus4);
+  train.add(torus5);
+  train.add(torus6);
+  train.add(torus7);
+  train.add(torus8);
+  train.add(capsule);
   
 
-
+  return train
 }
