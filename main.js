@@ -37,8 +37,8 @@ function createEnvironment() {
 createEnvironment()
 
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-const light = new THREE.DirectionalLight( 0xffffff, 3.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+const light = new THREE.DirectionalLight( 0xffffff, 4);
 const targetObject = new THREE.Object3D();
 
 light.position.set(-1, 9, 30);

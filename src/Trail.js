@@ -9,7 +9,7 @@ export function createTrail(x, z) {
   const material = new THREE.MeshStandardMaterial({
     map: metalTexture,
     metalness: 1,
-    roughness: 1,
+    roughness: 0.8,
     
   });
 
