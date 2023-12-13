@@ -3,13 +3,17 @@ import THREE from './src/_base';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createBox } from './src/Box'
 import { createTrain } from './src/Train';
-import { createCharacter } from './src/Character';
+import { createCharacter,
+  mixer,
+  changeCharacterAnimation,
+  stopCharacterAnimation,
+  transitionCharacterAnimation,
+} from './src/Character.js';
 import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
 import { RectAreaLight } from 'three';
 import { Light } from 'three';
-
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
 
@@ -99,6 +103,7 @@ function checkCollisions() {
   fences.forEach((fence) => {
     if (checkCollision(camera, fence) || checkCollision(character, fence)) {
       // Handle collision with fence
+      currentAnimation = 'idle';
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
@@ -107,6 +112,7 @@ function checkCollisions() {
   boxes.forEach((box) => {
     if (checkCollision(camera, box) || checkCollision(character, box)) {
       // Handle collision with box
+      currentAnimation = 'idle';
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
@@ -115,6 +121,7 @@ function checkCollisions() {
   trains.forEach((train) => {
     if (checkCollision(camera, train) || checkCollision(character, train)) {
       // Handle collision with train
+      currentAnimation = 'idle';
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
@@ -137,31 +144,35 @@ for (let i = 0; i < 20; i++) {
 }
 
 
-
-
-
 const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
 
 controls.zoomSpeed = 0.01; // Ajuste a sensibilidade do zoom aqui
 controls.enableDamping = true; //animação de movimentação da camera
 controls.target.set(0, 0, -10000); //para onde a camera aponta
 controls.rotateSpeed = 0.0001;
+
+const clock = new THREE.Clock();
+
 function animate() {
   requestAnimationFrame(animate);
+  // printCurrentAnimationInfo();
 
-  //movimentação do personagem
+  // Movimentação do personagem
   if (flag == 1) {
     camera.position.z -= 0.04;
     character.position.z -= 0.04;
-  }
-  //stop
-  else if(flag == 0){
+  } else if (flag == 0) {
     camera.position.z -= 0.0;
     character.position.z -= 0.0;
-
   }
 
-  controls.update();  //para movimentar a camera com o mouse
+  controls.update();  // Para movimentar a câmera com o mouse
+
+  // Update the animation mixer
+  if (mixer) {
+    mixer.update(clock.getDelta()); // Assuming you have a clock variable defined
+  }
+
   renderer.render(scene, camera);
 
   checkCollisions();
@@ -171,47 +182,83 @@ function animate() {
 
 const y = 0;
 const x = 0;
+let currentAnimation = 'idle';
 
 window.addEventListener('keydown', function (event) {
-  //restart
-  if (event.code === 'KeyR') { 
+  console.log(currentAnimation);
+  // restart
+  if (event.code === 'KeyR') {
+    currentAnimation = 'idle';
     resetGame();
     camera.position.set(0, 0.75, 0);
+  }
 
-
-  }
-  //pause
-  if(event.code === 'KeyP'){ 
-    if(flag == 0){
-      flag = 1
-    }
-    else{
-      flag = 0
-    }
-  }
-  //esquerda
-  if (event.code === 'KeyA' && camera.position.x > -0.1) {
-    camera.position.x -= 0.35;
-    character.position.x -= 0.35;
-  }
-  //direita
-  if (event.code === 'KeyD' && camera.position.x < 0.2) {
-    camera.position.x += 0.35;
-    character.position.x += 0.35;
-  }
-  //cima
+  // pause
+  if (event.code === 'KeyP') {
   
-  if (event.code === 'KeyS'/* && camera.position.y > 0.4*/) {
-    camera.position.y -= 0.35
-    character.position.y -= 0.35
+    if (flag === 0) {
+      startWalkingAnimation();
+      flag = 1;
+      
+    } else {
+      flag = 0;
+      stopWalkingAnimation();
+      currentAnimation = 'idle';
+    }
   }
-  //baixo
-  if (event.code === 'KeyW' /*&& camera.position.y < 1 */) {
-    camera.position.y += 0.35;
-    character.position.y += 0.35;
-  }
-})
 
-animate();// Add the following code after the camera position is set
+  // movement
+  const movementSpeed = 0.35;
+
+  // esquerda
+  if (event.code === 'KeyA' && camera.position.x > -0.1) {
+    camera.position.x -= movementSpeed;
+    character.position.x -= movementSpeed;
+    currentAnimation = 'Walking';
+  }
+
+  // direita
+  if (event.code === 'KeyD' && camera.position.x < 0.2) {
+    camera.position.x += movementSpeed;
+    character.position.x += movementSpeed;
+    currentAnimation = 'Walking';
+  }
+
+  // cima
+  if (event.code === 'KeyS' && camera.position.y > 0.4) {
+    camera.position.y -= movementSpeed;
+    character.position.y -= movementSpeed;
+    if (currentAnimation != 'slide')
+    {
+      changeCharacterAnimation('slide');
+      currentAnimation = 'slide';
+    }
+  }
+
+  // baixo
+  if (event.code === 'KeyW' && camera.position.y < 1) {
+    camera.position.y += movementSpeed;
+    character.position.y += movementSpeed;
+    if (currentAnimation != 'Walking')
+    {
+      changeCharacterAnimation('Walking');
+      currentAnimation = 'Walking';
+    }
+  }
+});
+
+// Function to start the "Walking" animation
+async function startWalkingAnimation() {
+  changeCharacterAnimation('Walking');
+  currentAnimation = 'Walking';
+}
+
+// Function to stop the "Walking" animation
+async function stopWalkingAnimation() {
+  stopCharacterAnimation(currentAnimation);
+  currentAnimation = 'idle';
+}
+
+animate();
 
 export { scene }
