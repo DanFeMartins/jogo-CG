@@ -328,22 +328,27 @@ window.addEventListener('keydown', function (event) {
 
   // esquerda
   if (event.code === 'KeyA' && camera.position.x > -0.1) {
-    camera.position.x -= movementSpeed;
-    character.position.x -= movementSpeed;
-    currentAnimation = 'Walking';
+    left();
+    if(currentAnimation != 'Walking')
+    {
+      changeCharacterAnimation('Walking');
+      currentAnimation = 'Walking';
+    }
   }
 
   // direita
   if (event.code === 'KeyD' && camera.position.x < 0.2) {
-    camera.position.x += movementSpeed;
-    character.position.x += movementSpeed;
-    currentAnimation = 'Walking';
+    right();
+    if(currentAnimation != 'Walking')
+    {
+      changeCharacterAnimation('Walking');
+      currentAnimation = 'Walking';
+    }
   }
 
   // cima
   if (event.code === 'KeyS' && camera.position.y > 0.4) {
-    camera.position.y -= movementSpeed;
-    character.position.y -= movementSpeed;
+    slide();
     if (currentAnimation != 'slide')
     {
       changeCharacterAnimation('slide');
@@ -353,8 +358,7 @@ window.addEventListener('keydown', function (event) {
 
   // baixo
   if (event.code === 'KeyW' && camera.position.y < 1) {
-    camera.position.y += movementSpeed;
-    character.position.y += movementSpeed;
+    jump();
     if (currentAnimation != 'Walking')
     {
       changeCharacterAnimation('Walking');
