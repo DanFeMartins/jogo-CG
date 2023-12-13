@@ -1,6 +1,5 @@
 # jogo-CG
-projeto de computação gráfica, utilizando WebGL, e threejs
-
+Projeto de computação gráfica, utilizando WebGL e threejs
 
 <h1>
   Como Rodar o Projeto?
