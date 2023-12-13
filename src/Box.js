@@ -11,7 +11,7 @@ export async function createBox(x, z) { //função para criar uma caixa, de acor
   const box = new THREE.Mesh(geometry, material);
   box.position.x = x;
   box.position.z = z;
-  box.position.y = 0.2;
+  box.position.y = 0.15;
   box.receiveShadow = true;
 
   // Habilitar o lançamento de sombras pelo objeto da caixa
