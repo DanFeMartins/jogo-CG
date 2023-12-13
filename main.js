@@ -3,30 +3,71 @@ import THREE from './src/_base';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createBox } from './src/Box'
 import { createTrain } from './src/Train';
-import { createCharacter,
+import {
+  createCharacter,
   mixer,
-  changeCharacterAnimation,
-  stopCharacterAnimation,
+  // changeCharacterAnimation,
+  // stopCharacterAnimation,
   transitionCharacterAnimation,
+  characterSlideAnimation
 } from './src/Character.js';
 import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
-import { RectAreaLight } from 'three';
-import { Light } from 'three';
 
-// import Tween.js if using modules
-// import { jump} from './src/animation';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+import {
+  RectAreaLight,
+  Light,
+  CubeTextureLoader,
+  TextureLoader
+} from 'three';
+
 import * as TWEEN from '@tweenjs/tween.js';
+
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
 
+let distance = 0;
+let personalRecord = 0;
+let distanceElement = 0;
+let personalRecordElement = 0;
+distanceElement = document.getElementById('distance');
+personalRecordElement = document.getElementById('personalRecord');
+
+function updateDistance() {
+  distance += 0.04; // Adjust this value based on your desired speed
+  personalRecord = Math.max(personalRecord, distance);
+  distanceElement.innerText = `Distance: ${distance.toFixed(2)} meters`;
+  personalRecordElement.innerText = `Personal Record: ${personalRecord.toFixed(2)} meters`;
+}
+
+function clearDistance(){
+  distance = 0;
+  distanceElement.innerText = `Distance: ${distance.toFixed(2)} meters`;
+}
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
-  
+
 })
+
+const composer = new EffectComposer(renderer);
+//screen size to composer
+composer.setSize(window.innerWidth, window.innerHeight);
+
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.1, 0.1, 0.1);
+
+composer.addPass(bloomPass);
 
 
 function createEnvironment() {
@@ -38,13 +79,13 @@ function createEnvironment() {
   renderer.shadowMap.enabled = true;
   renderer.render(scene, camera);
   // renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 }
 createEnvironment()
 
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
-const light = new THREE.DirectionalLight( 0xffffff, 4);
+const light = new THREE.DirectionalLight(0xffffff, 4);
 const targetObject = new THREE.Object3D();
 
 light.position.set(-1, 9, 30);
@@ -57,19 +98,19 @@ light.shadow.camera.near = 0.5; // default
 light.shadow.camera.far = 500; // default
 
 
-scene.add( light, targetObject, ambientLight );
+scene.add(light, targetObject, ambientLight);
 light.target = targetObject;
 
-const helper = new THREE.DirectionalLightHelper( light, 5 );
-scene.add( helper );  
+// const helper = new THREE.DirectionalLightHelper( light, 5 );
+// scene.add( helper );  
 
 // const helper1 = new THREE.CameraHelper( light.shadow.camera );
 // scene.add( helper1 );
 
 
 // const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
-function Ground(){
-  const Ground = new THREE.PlaneGeometry(1.1, 200,3);
+function Ground() {
+  const Ground = new THREE.PlaneGeometry(1.1, 200, 3);
   const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const ground = new THREE.Mesh(Ground, material_ground);
 
@@ -106,19 +147,20 @@ function checkCollisions() {
   // Check collision with fences
   fences.forEach((fence) => {
     if (checkCollision(camera, fence) || checkCollision(character, fence)) {
-      // Handle collision with fence
-      currentAnimation = 'idle';
-    if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
-      resetGame(); // Reset the game on collision (you can customize this)
-    };
-    }	
+      if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
+        stopWalkingAnimation();
+        isGameZeroed = true;
+        resetGame(); // Reset the game on collision (you can customize this)
+      };
+    }
   });
 
   // Check collision with boxes
   boxes.forEach((box) => {
     if (checkCollision(camera, box) || checkCollision(character, box)) {
       // Handle collision with box
-      currentAnimation = 'idle';
+      stopWalkingAnimation();
+      isGameZeroed = true;
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
@@ -127,7 +169,8 @@ function checkCollisions() {
   trains.forEach((train) => {
     if (checkCollision(camera, train) || checkCollision(character, train)) {
       // Handle collision with train
-      currentAnimation = 'idle';
+      stopWalkingAnimation();
+      isGameZeroed = true;
       resetGame(); // Reset the game on collision (you can customize this)
     }
   });
@@ -140,8 +183,8 @@ let trains = [] //array para guardar os trens
 
 
 // CRIAÇÃO DOS OBJETOS RANDOMICAMENTE
-for (let i = 0; i < 20; i++) {  
-  const valor = await createObj(); 
+for (let i = 0; i < 20; i++) {
+  const valor = await createObj();
   boxes.push(await createBox(valor.x, valor.z));
   const valor2 = await createObj();
   trains.push(await createTrain(valor2.x, valor2.z));
@@ -150,7 +193,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 
-function jump() {
+async function jump() {
   const jumpHeight = 0.6; // Set your desired jump height
   const jumpDuration = 350; // Set the duration of the jump in milliseconds
 
@@ -174,14 +217,14 @@ function jump() {
   tween1.start();
 }
 
-function slide(){
-  const slideDuration = 350; // Set the duration of the jump in milliseconds
+function slide() {
+  const slideDuration = 500; // Set the duration of the jump in milliseconds
 
   const initialCharacterX = 0;
-  
+
 
   const tween1 = new TWEEN.Tween(character.position)
-    .to({ y: -0.4 }, slideDuration)
+    .to({ y: -0.2 }, slideDuration)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onUpdate((coords) => {
       character.position.y = coords.y;
@@ -194,10 +237,11 @@ function slide(){
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.chain(tween2).finished; // Chain the tweens for sequential execution
   tween1.start();
 
 }
+
 
 function left() {
   const leftDuration = 120; // Set the duration of the jump in milliseconds
@@ -229,12 +273,12 @@ function left() {
   tween2.start();
 }
 
-function right(){
+function right() {
   const leftDuration = 120; // Set the duration of the jump in milliseconds
 
   let final_pos
 
-  if (character.position.x === 0) { 
+  if (character.position.x === 0) {
     final_pos = 0.35;
   } else if (character.position.x === 0.35) {
     return;
@@ -242,18 +286,18 @@ function right(){
     final_pos = 0;
   }
   const tween1 = new TWEEN.Tween(character.position)
-  .to({ x: final_pos }, leftDuration)
-  .easing(TWEEN.Easing.Quadratic.Out)
-  .onUpdate((coords) => {
-    character.position.x = coords.x;
-  });
+    .to({ x: final_pos }, leftDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      character.position.x = coords.x;
+    });
 
   const tween2 = new TWEEN.Tween(camera.position)
-  .to({ x: final_pos }, leftDuration)
-  .easing(TWEEN.Easing.Quadratic.Out)
-  .onUpdate((coords) => {
-    camera.position.x = coords.x;
-  });
+    .to({ x: final_pos }, leftDuration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate((coords) => {
+      camera.position.x = coords.x;
+    });
 
   tween1.start();
   tween2.start();
@@ -277,9 +321,12 @@ function animate() {
   if (flag == 1) {
     camera.position.z -= 0.04;
     character.position.z -= 0.04;
+    updateDistance();
+
   } else if (flag == 0) {
     camera.position.z -= 0.0;
     character.position.z -= 0.0;
+    clearDistance();
   }
 
   controls.update();  // Para movimentar a câmera com o mouse
@@ -289,7 +336,8 @@ function animate() {
     mixer.update(clock.getDelta()); // Assuming you have a clock variable defined
   }
 
-  renderer.render(scene, camera);
+  
+  composer.render(scene, camera);
 
   checkCollisions();
 }
@@ -298,28 +346,40 @@ function animate() {
 
 const y = 0;
 const x = 0;
+
+let isGameZeroed = true;
 let currentAnimation = 'idle';
 
 window.addEventListener('keydown', function (event) {
   console.log(currentAnimation);
   // restart
   if (event.code === 'KeyR') {
-    currentAnimation = 'idle';
+    stopWalkingAnimation();
+    isGameZeroed = true;
     resetGame();
     camera.position.set(0, 0.75, 0);
   }
 
   // pause
   if (event.code === 'KeyP') {
-  
-    if (flag === 0) {
+
+    if (isGameZeroed === true) {
       startWalkingAnimation();
+      currentAnimation = 'Walking';
+      isGameZeroed = false;
+    } else {
+      if (currentAnimation != 'idle') {
+        transitionCharacterAnimation(currentAnimation, 'idle', 0.5);
+        currentAnimation = 'idle';
+        isGameZeroed = true;
+      }
+    }
+
+    if (flag === 0) {
       flag = 1;
-      
     } else {
       flag = 0;
-      stopWalkingAnimation();
-      currentAnimation = 'idle';
+
     }
   }
 
@@ -329,53 +389,38 @@ window.addEventListener('keydown', function (event) {
   // esquerda
   if (event.code === 'KeyA' && camera.position.x > -0.1) {
     left();
-    if(currentAnimation != 'Walking')
-    {
-      changeCharacterAnimation('Walking');
-      currentAnimation = 'Walking';
-    }
   }
 
   // direita
   if (event.code === 'KeyD' && camera.position.x < 0.2) {
     right();
-    if(currentAnimation != 'Walking')
-    {
-      changeCharacterAnimation('Walking');
-      currentAnimation = 'Walking';
-    }
   }
 
   // cima
-  if (event.code === 'KeyS' && camera.position.y > 0.4) {
+  if (event.code === 'KeyS' && camera.position.y > 0.4 && isGameZeroed === false) {
+    currentAnimation = 'slide';
     slide();
-    if (currentAnimation != 'slide')
-    {
-      changeCharacterAnimation('slide');
-      currentAnimation = 'slide';
-    }
+    characterSlideAnimation();
+    currentAnimation = 'Walking';
   }
 
   // baixo
-  if (event.code === 'KeyW' && camera.position.y < 1) {
+  if (event.code === 'KeyW' && camera.position.y < 1 && isGameZeroed === false) {
+    currentAnimation = 'jumping';
     jump();
-    if (currentAnimation != 'Walking')
-    {
-      changeCharacterAnimation('Walking');
-      currentAnimation = 'Walking';
-    }
+    currentAnimation = 'Walking';
   }
 });
 
 // Function to start the "Walking" animation
 async function startWalkingAnimation() {
-  changeCharacterAnimation('Walking');
+  transitionCharacterAnimation(currentAnimation, 'Walking', 0.5);
   currentAnimation = 'Walking';
 }
 
 // Function to stop the "Walking" animation
 async function stopWalkingAnimation() {
-  stopCharacterAnimation(currentAnimation);
+  transitionCharacterAnimation(currentAnimation, 'idle', 0.5);
   currentAnimation = 'idle';
 }
 

@@ -36,35 +36,12 @@ export function createCharacter() {
       animationClips = loadedGltfScene.animations; // Use the correct variable name
       mixer = new THREE.AnimationMixer(character);
 
+      const animationClip = THREE.AnimationClip.findByName(animationClips, 'idle');
+      const animationIdle = mixer.clipAction(animationClip);
+      animationIdle.play();
       resolve(character);
     }, undefined, reject);
   });
-}
-
-export async function changeCharacterAnimation(animationName) {
-  const animationClip = THREE.AnimationClip.findByName(animationClips, animationName);
-
-  if (animationClip) {
-    const currentAction = mixer.existingAction(animationClip);
-
-    if (currentAction) {
-      // Se a ação atual existe, pare-a antes de iniciar a nova animação
-      currentAction.stop();
-      const newAction = mixer.clipAction(animationClip);
-      
-      // Espere a transição terminar antes de iniciar a nova animação
-      await currentAction.crossFadeTo(newAction, 0.5, true).finished;
-
-      // Você pode optar por pausar a animação na última posição se necessário
-      // newAction.paused = true;
-    } else {
-      // Se a ação atual não existe, apenas inicie a nova animação
-      const animationAction = mixer.clipAction(animationClip);
-      animationAction.play();
-    }
-  } else {
-    console.error(`Animation clip "${animationName}" not found.`);
-  }
 }
 
 export async function stopCharacterAnimation(animationName) {
@@ -82,16 +59,33 @@ export async function transitionCharacterAnimation(fromAnimation, toAnimation, d
   const fromClip = THREE.AnimationClip.findByName(animationClips, fromAnimation);
   const toClip = THREE.AnimationClip.findByName(animationClips, toAnimation);
 
-    const fromAction = mixer.clipAction(fromClip);
-    const toAction = mixer.clipAction(toClip);
+  const fromAction = mixer.clipAction(fromClip);
+  const toAction = mixer.clipAction(toClip);
 
-    toAction.time = 0;
-    toAction.setEffectiveTimeScale(1);
-    toAction.setEffectiveWeight(1);
+  fromAction.crossFadeTo(toAction, duration, false);
+  toAction.play();
+  fromAction.stop();
+}
 
-    // Crossfade and wait for completion before playing the new animation
-    fromAction.crossFadeTo(toAction, duration, true).finished;
+export async function characterSlideAnimation() {
+  const walkingClip = THREE.AnimationClip.findByName(animationClips, 'Walking');
+  const slideClip = THREE.AnimationClip.findByName(animationClips, 'slide');
 
-    // Start playing the "to" animation
-    toAction.play();
+  const walkingAction = mixer.clipAction(walkingClip);
+  const slideAction = mixer.clipAction(slideClip);
+
+  slideAction.setLoop(THREE.LoopOnce);
+
+  slideAction.clampWhenFinished = true;
+
+  walkingAction.crossFadeTo(slideAction, 0.5, false);
+  walkingAction.stop();
+  slideAction.play();
+
+  setTimeout(() => {
+    slideAction.crossFadeTo(walkingAction, 0.5, false);
+    slideAction.stop();
+    walkingAction.play();
+  }, 0.5 * 1000);  
+
 }
