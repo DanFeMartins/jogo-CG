@@ -9,8 +9,6 @@ import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
 import { RectAreaLight } from 'three';
 import { Light } from 'three';
-// import Tween.js if using modules
-// import { jump} from './src/animation';
 import * as TWEEN from '@tweenjs/tween.js';
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
@@ -45,10 +43,10 @@ light.position.set(-1, 9, 30);
 light.castShadow = true;
 light.receiveShadow = true;
 targetObject.position.set(0, 0, -40);
-light.shadow.mapSize.width = 1024; // default
-light.shadow.mapSize.height = 1024; // default
-light.shadow.camera.near = 0.5; // default
-light.shadow.camera.far = 500; // default
+light.shadow.mapSize.width = 1024; 
+light.shadow.mapSize.height = 1024; 
+light.shadow.camera.near = 0.5; 
+light.shadow.camera.far = 500; 
 
 
 scene.add( light, targetObject, ambientLight );
@@ -61,7 +59,6 @@ scene.add( helper );
 // scene.add( helper1 );
 
 
-// const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
 function Ground(){
   const Ground = new THREE.PlaneGeometry(1.1, 200,3);
   const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
@@ -81,7 +78,7 @@ createTrail(-0.35, 0)
 
 
 function resetGame() {
-  // Reset the positions of camera and character
+  
   camera.position.set(0, 0.75, 0);
 
   character.position.set(0, 0, -1);
@@ -97,24 +94,23 @@ function checkCollision(object1, object2) {
 }
 
 function checkCollisions() {
-  // Check collision with fences
   fences.forEach((fence) => {
     if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+      resetGame();
     }
   });
 
-  // Check collision with boxes
+ 
   boxes.forEach((box) => {
     if (camera && box && (checkCollision(camera, box) || checkCollision(character, box))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+      resetGame(); 
     }
   });
 
-  // Check collision with trains
+
   trains.forEach((train) => {
     if (camera && train && (checkCollision(camera, train) || checkCollision(character, train))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+      resetGame(); 
     }
   });
 }
@@ -142,8 +138,8 @@ for (let i = 0; i < 20; i++) {
 
 
 function jump() {
-  const jumpHeight = 0.6; // Set your desired jump height
-  const jumpDuration = 350; // Set the duration of the jump in milliseconds
+  const jumpHeight = 0.6; 
+  const jumpDuration = 350; 
 
   const initialCharacterY = 0
 
@@ -161,12 +157,12 @@ function jump() {
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.chain(tween2); 
   tween1.start();
 }
 
 function slide(){
-  const slideDuration = 350; // Set the duration of the jump in milliseconds
+  const slideDuration = 350; 
 
   const initialCharacterX = 0;
   
@@ -185,14 +181,14 @@ function slide(){
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.chain(tween2); 
   tween1.start();
 
 }
 
 function left() {
-  const leftDuration = 120; // Set the duration of the jump in milliseconds
-  let final_pos; // Declare final_pos variable here
+  const leftDuration = 120; 
+  let final_pos; 
 
   if (character.position.x === 0) {
     final_pos = -0.35;
@@ -221,7 +217,7 @@ function left() {
 }
 
 function right(){
-  const leftDuration = 120; // Set the duration of the jump in milliseconds
+  const leftDuration = 120; 
 
   let final_pos
 
@@ -252,11 +248,11 @@ function right(){
 }
 
 
-const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
+const controls = new OrbitControls(camera, renderer.domElement); 
 
-controls.zoomSpeed = 0.01; // Ajuste a sensibilidade do zoom aqui
-controls.enableDamping = true; //animação de movimentação da camera
-controls.target.set(0, 0, -10000); //para onde a camera aponta
+controls.zoomSpeed = 0.01; 
+controls.enableDamping = true; 
+controls.target.set(0, 0, -10000); 
 controls.rotateSpeed = 0.0001;
 function animate() {
   requestAnimationFrame(animate);
@@ -280,10 +276,6 @@ function animate() {
   checkCollisions();
 }
 
-// função para movimentar a camera com o teclado
-
-const y = 0;
-const x = 0;
 
 window.addEventListener('keydown', function (event) {
   //restart
@@ -324,6 +316,6 @@ window.addEventListener('keydown', function (event) {
 
 
 
-animate();// Add the following code after the camera position is set
+animate();
 
 export { scene }
