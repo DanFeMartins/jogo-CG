@@ -3,15 +3,54 @@ import THREE from './src/_base';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createBox } from './src/Box'
 import { createTrain } from './src/Train';
-import { createCharacter } from './src/Character';
+import {
+  createCharacter,
+  mixer,
+  transitionCharacterAnimation,
+  characterSlideAnimation
+} from './src/Character.js';
+
+import {
+  stumbleSideSound,
+  horizontalSwish,
+  verticalSwish,
+  roll,
+  landing,
+  hit,
+  theme_music
+} from './src/sound_effects.js';
+
 import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
-import { RectAreaLight } from 'three';
-import { Light } from 'three';
+
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
 import * as TWEEN from '@tweenjs/tween.js';
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
+
+let distance = 0;
+let personalRecord = 0;
+let distanceElement = 0;
+let personalRecordElement = 0;
+distanceElement = document.getElementById('distance');
+personalRecordElement = document.getElementById('personalRecord');
+
+function updateDistance() {
+  
+  distance += 0.04; 
+  personalRecord = Math.max(personalRecord, distance);
+  distanceElement.innerText = `Distance: ${distance.toFixed(2)} meters`;
+  personalRecordElement.innerText = `Personal Record: ${personalRecord.toFixed(2)} meters`;
+}
+
+function clearDistance(){
+  distance = 0;
+  distanceElement.innerText = `Distance: ${distance.toFixed(2)} meters`;
+}
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -20,6 +59,17 @@ const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
 
 })
+
+const composer = new EffectComposer(renderer);
+
+composer.setSize(window.innerWidth, window.innerHeight);
+
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.1, 0.1, 0.1);
+
+composer.addPass(bloomPass);
 
 
 function createEnvironment() {
@@ -37,32 +87,24 @@ createEnvironment()
 
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
-const light = new THREE.DirectionalLight( 0xffffff, 4);
+const light = new THREE.DirectionalLight(0xffffff, 4);
 const targetObject = new THREE.Object3D();
 
 light.position.set(-1, 9, 30);
 light.castShadow = true;
 light.receiveShadow = true;
 targetObject.position.set(0, 0, -40);
-light.shadow.mapSize.width = 1024; 
-light.shadow.mapSize.height = 1024; 
-light.shadow.camera.near = 0.5; 
-light.shadow.camera.far = 500; 
+light.shadow.mapSize.width = 1024;
+light.shadow.mapSize.height = 1024;
+light.shadow.camera.near = 0.5;
+light.shadow.camera.far = 500;
 
 
-scene.add( light, targetObject, ambientLight );
+scene.add(light, targetObject, ambientLight);
 light.target = targetObject;
 
-const helper = new THREE.DirectionalLightHelper( light, 5 );
-scene.add( helper );  
-
-// const helper1 = new THREE.CameraHelper( light.shadow.camera );
-// scene.add( helper1 );
-
-
-// const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
-function Ground(){
-  const Ground = new THREE.PlaneGeometry(1.1, 200,3);
+function Ground() {
+  const Ground = new THREE.PlaneGeometry(1.1, 200, 3);
   const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const ground = new THREE.Mesh(Ground, material_ground);
 
@@ -80,8 +122,10 @@ createTrail(-0.35, 0)
 
 
 function resetGame() {
-  // Reset the positions of camera and character
+  // Reinicia a posição da câmera
   camera.position.set(0, 0.75, 0);
+  stopWalkingAnimation();
+
 
   // Reinicia a posição do personagem
   character.position.set(0, 0, -1);
@@ -100,22 +144,30 @@ function checkCollision(object1, object2) {
 // Função para verificar colisões do personagem com os objetos
 function checkCollisions() {
   fences.forEach((fence) => {
-    if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+    if (checkCollision(camera, fence) || checkCollision(character, fence)) {
+      if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
+        hit.cloneNode().play();
+        isGameZeroed = true;
+        resetGame(); // Reinicia o Jogo caso identifique alguma colisão
+      };
     }
   });
 
-  // Check collision with boxes
+  // Verifica colisões com caixas
   boxes.forEach((box) => {
-    if (camera && box && (checkCollision(camera, box) || checkCollision(character, box))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+    if (checkCollision(camera, box) || checkCollision(character, box)) {
+      hit.cloneNode().play();
+      isGameZeroed = true;
+      resetGame(); // Reinicia o Jogo caso identifique alguma colisão
     }
   });
 
-  // Check collision with trains
+  // Verifica colisões com trens
   trains.forEach((train) => {
-    if (camera && train && (checkCollision(camera, train) || checkCollision(character, train))) {
-      resetGame(); // Reset the game on collision (you can customize this)
+    if (checkCollision(camera, train) || checkCollision(character, train)) {
+      hit.cloneNode().play();
+      isGameZeroed = true;
+      resetGame(); // Reinicia o Jogo caso identifique alguma colisão
     }
   });
 }
@@ -137,9 +189,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 
-
-
-function jump() {
+async function jump() {
   const jumpHeight = 0.6; // Set your desired jump height
   const jumpDuration = 350; // Set the duration of the jump in milliseconds
 
@@ -159,12 +209,12 @@ function jump() {
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); 
+  tween1.chain(tween2); // Chain the tweens for sequential execution
   tween1.start();
 }
 
-function slide(){
-  const slideDuration = 350; // Set the duration of the jump in milliseconds
+function slide() {
+  const slideDuration = 500; // Set the duration of the jump in milliseconds
 
   const initialCharacterX = 0;
 
@@ -183,15 +233,15 @@ function slide(){
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.chain(tween2).finished; // Chain the tweens for sequential execution
   tween1.start();
 
 }
 
 
 function left() {
-  const leftDuration = 120; 
-  let final_pos; 
+  const leftDuration = 120; // Set the duration of the jump in milliseconds
+  let final_pos; // Declare final_pos variable here
 
   if (character.position.x === 0) {
     final_pos = -0.35;
@@ -219,7 +269,7 @@ function left() {
   tween2.start();
 }
 
-function right(){
+function right() {
   const leftDuration = 120; // Set the duration of the jump in milliseconds
 
   let final_pos
@@ -249,13 +299,11 @@ function right(){
   tween2.start();
 
 }
-
-
 const controls = new OrbitControls(camera, renderer.domElement); //para movimentar a camera com o mouse
 
-controls.zoomSpeed = 0.01; 
-controls.enableDamping = true; 
-controls.target.set(0, 0, -10000); 
+controls.zoomSpeed = 0.01; // Ajuste a sensibilidade do zoom aqui
+controls.enableDamping = true; //animação de movimentação da camera
+controls.target.set(0, 0, -10000); //para onde a camera aponta
 controls.rotateSpeed = 0.0001;
 
 const clock = new THREE.Clock();
@@ -298,11 +346,15 @@ function animate() {
 const y = 0;
 const x = 0;
 
+let isGameZeroed = true;
+let currentAnimation = 'idle';
+
+//
+
 window.addEventListener('keydown', function (event) {
   console.log(currentAnimation);
   // restart
   if (event.code === 'KeyR') {
-    stopWalkingAnimation();
     isGameZeroed = true;
     resetGame();
     camera.position.set(0, 0.75, 0);
@@ -365,8 +417,10 @@ window.addEventListener('keydown', function (event) {
     currentAnimation = 'slide';
     slide();
     roll.cloneNode().play();
-    characterSlideAnimation();
-    currentAnimation = 'Walking';
+    if(characterSlideAnimation(isGameZeroed) === true)
+    {
+      
+    };
   }
 
   // baixo
@@ -391,7 +445,6 @@ function stopWalkingAnimation() {
   currentAnimation = 'idle';
 }
 
-
-animate();// Add the following code after the camera position is set
+animate();
 
 export { scene }
