@@ -87,7 +87,7 @@ createEnvironment()
 
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
-const light = new THREE.DirectionalLight(0xffffff, 4);
+const light = new THREE.DirectionalLight(0xffffff, 3);
 const targetObject = new THREE.Object3D();
 
 light.position.set(-1, 9, 30);
@@ -190,8 +190,8 @@ for (let i = 0; i < 20; i++) {
 
 
 async function jump() {
-  const jumpHeight = 0.6; // Set your desired jump height
-  const jumpDuration = 350; // Set the duration of the jump in milliseconds
+  const jumpHeight = 0.6;
+  const jumpDuration = 350; 
 
   const initialCharacterY = 0
 
@@ -209,12 +209,12 @@ async function jump() {
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2); // Chain the tweens for sequential execution
+  tween1.chain(tween2); 
   tween1.start();
 }
 
 function slide() {
-  const slideDuration = 500; // Set the duration of the jump in milliseconds
+  const slideDuration = 500; 
 
   const initialCharacterX = 0;
 
@@ -233,15 +233,15 @@ function slide() {
       character.position.y = coords.y;
     });
 
-  tween1.chain(tween2).finished; // Chain the tweens for sequential execution
+  tween1.chain(tween2).finished; 
   tween1.start();
 
 }
 
 
 function left() {
-  const leftDuration = 120; // Set the duration of the jump in milliseconds
-  let final_pos; // Declare final_pos variable here
+  const leftDuration = 120; 
+  let final_pos; 
 
   if (character.position.x === 0) {
     final_pos = -0.35;
@@ -270,7 +270,7 @@ function left() {
 }
 
 function right() {
-  const leftDuration = 120; // Set the duration of the jump in milliseconds
+  const leftDuration = 120; 
 
   let final_pos
 
@@ -330,9 +330,8 @@ function animate() {
 
   controls.update();  // Para movimentar a câmera com o mouse
 
-  // Update the animation mixer
   if (mixer) {
-    mixer.update(clock.getDelta()); // Assuming you have a clock variable defined
+    mixer.update(clock.getDelta()); 
   }
 
   
@@ -357,7 +356,6 @@ window.addEventListener('keydown', function (event) {
   if (event.code === 'KeyR') {
     isGameZeroed = true;
     resetGame();
-    camera.position.set(0, 0.75, 0);
   }
 
   // pause

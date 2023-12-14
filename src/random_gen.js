@@ -7,7 +7,7 @@ export async function createObj() {
     const minDistance = 1.0;
 
     let x, z;
-    let tooClose; // Declare tooClose outside the loop
+    let tooClose;
 
     do {
         const randomIndex = Math.floor(Math.random() * 3);
