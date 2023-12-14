@@ -6,11 +6,20 @@ import { createTrain } from './src/Train';
 import {
   createCharacter,
   mixer,
-  // changeCharacterAnimation,
-  // stopCharacterAnimation,
   transitionCharacterAnimation,
   characterSlideAnimation
 } from './src/Character.js';
+
+import {
+  stumbleSideSound,
+  horizontalSwish,
+  verticalSwish,
+  roll,
+  landing,
+  hit,
+  theme_music
+} from './src/sound_effects.js';
+
 import { createFence } from './src/Fence';
 import { createTrail } from './src/Trail';
 import { createObj } from './src/random_gen';
@@ -19,15 +28,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
-import {
-  RectAreaLight,
-  Light,
-  CubeTextureLoader,
-  TextureLoader
-} from 'three';
-
 import * as TWEEN from '@tweenjs/tween.js';
-
 
 let flag = 0; //flag para ajustar a velocidade que percorre o eixo z, sempre negativamente
 
@@ -39,7 +40,8 @@ distanceElement = document.getElementById('distance');
 personalRecordElement = document.getElementById('personalRecord');
 
 function updateDistance() {
-  distance += 0.04; // Adjust this value based on your desired speed
+  
+  distance += 0.04; 
   personalRecord = Math.max(personalRecord, distance);
   distanceElement.innerText = `Distance: ${distance.toFixed(2)} meters`;
   personalRecordElement.innerText = `Personal Record: ${personalRecord.toFixed(2)} meters`;
@@ -59,7 +61,7 @@ const renderer = new THREE.WebGLRenderer({
 })
 
 const composer = new EffectComposer(renderer);
-//screen size to composer
+
 composer.setSize(window.innerWidth, window.innerHeight);
 
 const renderPass = new RenderPass(scene, camera);
@@ -92,23 +94,15 @@ light.position.set(-1, 9, 30);
 light.castShadow = true;
 light.receiveShadow = true;
 targetObject.position.set(0, 0, -40);
-light.shadow.mapSize.width = 1024; // default
-light.shadow.mapSize.height = 1024; // default
-light.shadow.camera.near = 0.5; // default
-light.shadow.camera.far = 500; // default
+light.shadow.mapSize.width = 1024;
+light.shadow.mapSize.height = 1024;
+light.shadow.camera.near = 0.5;
+light.shadow.camera.far = 500;
 
 
 scene.add(light, targetObject, ambientLight);
 light.target = targetObject;
 
-// const helper = new THREE.DirectionalLightHelper( light, 5 );
-// scene.add( helper );  
-
-// const helper1 = new THREE.CameraHelper( light.shadow.camera );
-// scene.add( helper1 );
-
-
-// const Ground = new THREE.PlaneGeometry(1.1, 200,3); ORIGINAL
 function Ground() {
   const Ground = new THREE.PlaneGeometry(1.1, 200, 3);
   const material_ground = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
@@ -128,50 +122,53 @@ createTrail(-0.35, 0)
 
 
 function resetGame() {
-  // Reset the positions of camera and character
+  // Reinicia a posição da câmera
   camera.position.set(0, 0.75, 0);
 
+  // Reinicia a posição do personagem
   character.position.set(0, 0, -1);
 
 
   flag = 0;
 }
 
+// Função para verificar intersecções de objetos
 function checkCollision(object1, object2) {
   const box1 = new THREE.Box3().setFromObject(object1);
   const box2 = new THREE.Box3().setFromObject(object2);
   return box1.intersectsBox(box2);
 }
 
+// Função para verificar colisões do personagem com os objetos
 function checkCollisions() {
-  // Check collision with fences
   fences.forEach((fence) => {
     if (checkCollision(camera, fence) || checkCollision(character, fence)) {
       if (camera && fence && (checkCollision(camera, fence) || checkCollision(character, fence))) {
+        hit.cloneNode().play();
         stopWalkingAnimation();
         isGameZeroed = true;
-        resetGame(); // Reset the game on collision (you can customize this)
+        resetGame(); // Reinicia o Jogo caso identifique alguma colisão
       };
     }
   });
 
-  // Check collision with boxes
+  // Verifica colisões com caixas
   boxes.forEach((box) => {
     if (checkCollision(camera, box) || checkCollision(character, box)) {
-      // Handle collision with box
+      hit.cloneNode().play();
       stopWalkingAnimation();
       isGameZeroed = true;
-      resetGame(); // Reset the game on collision (you can customize this)
+      resetGame(); // Reinicia o Jogo caso identifique alguma colisão
     }
   });
 
-  // Check collision with trains
+  // Verifica colisões com trens
   trains.forEach((train) => {
     if (checkCollision(camera, train) || checkCollision(character, train)) {
-      // Handle collision with train
+      hit.cloneNode().play();
       stopWalkingAnimation();
       isGameZeroed = true;
-      resetGame(); // Reset the game on collision (you can customize this)
+      resetGame(); // Reinicia o Jogo caso identifique alguma colisão
     }
   });
 }
@@ -313,7 +310,9 @@ controls.rotateSpeed = 0.0001;
 const clock = new THREE.Clock();
 
 function animate() {
+  
   requestAnimationFrame(animate);
+
   // printCurrentAnimationInfo();
   TWEEN.update();
 
@@ -322,6 +321,7 @@ function animate() {
     camera.position.z -= 0.04;
     character.position.z -= 0.04;
     updateDistance();
+    
 
   } else if (flag == 0) {
     camera.position.z -= 0.0;
@@ -350,6 +350,8 @@ const x = 0;
 let isGameZeroed = true;
 let currentAnimation = 'idle';
 
+//
+
 window.addEventListener('keydown', function (event) {
   console.log(currentAnimation);
   // restart
@@ -363,6 +365,8 @@ window.addEventListener('keydown', function (event) {
   // pause
   if (event.code === 'KeyP') {
 
+    theme_music.play();
+    
     if (isGameZeroed === true) {
       startWalkingAnimation();
       currentAnimation = 'Walking';
@@ -387,39 +391,56 @@ window.addEventListener('keydown', function (event) {
   const movementSpeed = 0.35;
 
   // esquerda
-  if (event.code === 'KeyA' && camera.position.x > -0.1) {
-    left();
+  if (event.code === 'KeyA') {
+    if (camera.position.x > -0.1){
+      horizontalSwish.cloneNode().play();
+      left();
+    }
+    else{
+      stumbleSideSound.cloneNode().play();
+    }
   }
 
   // direita
-  if (event.code === 'KeyD' && camera.position.x < 0.2) {
+  if (event.code === 'KeyD') {
+    if (camera.position.x < 0.2)
+    {
     right();
+      horizontalSwish.cloneNode().play();
+    }
+    else
+    {
+      stumbleSideSound.cloneNode().play();
+    }
   }
 
   // cima
   if (event.code === 'KeyS' && camera.position.y > 0.4 && isGameZeroed === false) {
     currentAnimation = 'slide';
     slide();
+    roll.cloneNode().play();
     characterSlideAnimation();
     currentAnimation = 'Walking';
   }
 
   // baixo
-  if (event.code === 'KeyW' && camera.position.y < 1 && isGameZeroed === false) {
+  if (event.code === 'KeyW' && camera.position.y < 1 && isGameZeroed === false && currentAnimation != 'jumping') {
     currentAnimation = 'jumping';
+    verticalSwish.cloneNode().play();
     jump();
     currentAnimation = 'Walking';
+    setTimeout(() => {
+      landing.cloneNode().play();
+    }, 450);
   }
 });
 
-// Function to start the "Walking" animation
-async function startWalkingAnimation() {
+function startWalkingAnimation() {
   transitionCharacterAnimation(currentAnimation, 'Walking', 0.5);
   currentAnimation = 'Walking';
 }
 
-// Function to stop the "Walking" animation
-async function stopWalkingAnimation() {
+function stopWalkingAnimation() {
   transitionCharacterAnimation(currentAnimation, 'idle', 0.5);
   currentAnimation = 'idle';
 }
