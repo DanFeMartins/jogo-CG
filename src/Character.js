@@ -4,88 +4,86 @@ import * as THREE from 'three';
 
 let mixer;
 let gltfScene;
-let clips;
-let animationClips; // Use the correct variable name
+let animationClips;
 
 export { mixer, gltfScene, animationClips };
 
+// Função para criar o personagem
 export function createCharacter() {
-  return new Promise((resolve, reject) => {
-    const gftLoader = new GLTFLoader();
+  return new Promise((resolve, reject) => { // Cria uma promise para retornar o personagem
+    const gftLoader = new GLTFLoader(); // Cria um loader de GLTF
     gftLoader.load('../assets/modelos/boneco/source/boneco_all1.glb', (loadedGltfScene) => {
 
-      gltfScene = loadedGltfScene.scene;
-      const character = gltfScene;
-      character.rotation.y -= Math.PI / -2;
-      character.scale.set(0.18, 0.18, 0.18);
-      character.position.set(0, 0.03, -1.1); // Move the model up 0.1 units
+      gltfScene = loadedGltfScene.scene; // Armazena a cena do personagem
+      const character = gltfScene; // Armazena o personagem
+      character.rotation.y -= Math.PI / -2; // Rotação
+      character.scale.set(0.18, 0.18, 0.18); // Escala
+      character.position.set(0, 0.03, -1.1); // Posição
 
-      // Loop through all materials in the character and adjust properties
+      // Definição de propriedades de material do personagem
       character.traverse(child => {
         if (child.isMesh) {
-          // Set metalness and roughness to 0 to reduce reflectivity
-          child.material.metalness = 0;
-          child.material.roughness = 1; // You can also play with roughness values
+          child.material.metalness = 0; // Metalidade
+          child.material.roughness = 1; // Dureza
         }
       });
 
-      character.castShadow = true;
-      character.receiveShadow = true;
-      scene.add(character);
+      character.castShadow = true; // Possibilita que o personagem projete sombra
+      character.receiveShadow = true; // Possibilita que o personagem receba sombra
+      scene.add(character); // Adiciona o personagem na cena
 
-      animationClips = loadedGltfScene.animations; // Use the correct variable name
-      mixer = new THREE.AnimationMixer(character);
+      animationClips = loadedGltfScene.animations; // Armazena os clipes de animação do personagem
+      mixer = new THREE.AnimationMixer(character); // Cria um mixer de animação para o personagem
 
-      const animationClip = THREE.AnimationClip.findByName(animationClips, 'idle');
-      const animationIdle = mixer.clipAction(animationClip);
-      animationIdle.play();
-      resolve(character);
-    }, undefined, reject);
+      const animationClip = THREE.AnimationClip.findByName(animationClips, 'idle'); // Define o clip de animação inicial
+      const animationIdle = mixer.clipAction(animationClip); // Cria uma ação de animação para o clipe definido
+      animationIdle.play(); // Inicia a animação
+      resolve(character); // Retorna o personagem
+    }, undefined, reject); // Caso ocorra algum erro, rejeita a promise
   });
 }
 
-export async function stopCharacterAnimation(animationName) {
-  const animationClip = THREE.AnimationClip.findByName(animationClips, animationName);
+// Função para iniciar uma animação
+export function transitionCharacterAnimation(fromAnimation, toAnimation, duration) { 
 
-  if (animationClip) {
-    const currentAction = mixer.existingAction(animationClip);
-    currentAction.fadeOut(0.5);
-  } else {
-    console.error(`Animation clip "${animationName}" not found.`);
-  }
-}
-
-export async function transitionCharacterAnimation(fromAnimation, toAnimation, duration) {
-  const fromClip = THREE.AnimationClip.findByName(animationClips, fromAnimation);
+  // Procura o clipe das animações pelos nomes
+  const fromClip = THREE.AnimationClip.findByName(animationClips, fromAnimation); 
   const toClip = THREE.AnimationClip.findByName(animationClips, toAnimation);
 
+  // Cria as ações de animação para os clipes encontrados
   const fromAction = mixer.clipAction(fromClip);
   const toAction = mixer.clipAction(toClip);
 
-  fromAction.crossFadeTo(toAction, duration, false);
-  toAction.play();
-  fromAction.stop();
+  fromAction.crossFadeTo(toAction, duration, false); // Faz uma transição suave entre as animações
+  toAction.play(); // Inicia a animação
+  fromAction.stop(); // Para a animação anterior
 }
 
-export async function characterSlideAnimation() {
+// Função para fazer o personagem deslizar
+export function characterSlideAnimation() {
+
+  // Procura o clipe das animações pelos nomes
   const walkingClip = THREE.AnimationClip.findByName(animationClips, 'Walking');
   const slideClip = THREE.AnimationClip.findByName(animationClips, 'slide');
 
+  // Cria as ações de animação para os clipes encontrados
   const walkingAction = mixer.clipAction(walkingClip);
   const slideAction = mixer.clipAction(slideClip);
 
+  // Realiza apenas um loop da animação de delize
   slideAction.setLoop(THREE.LoopOnce);
 
+  // Fixa a posição do personagem no final da animação de deslize
   slideAction.clampWhenFinished = true;
 
-  walkingAction.crossFadeTo(slideAction, 0.5, false);
-  walkingAction.stop();
-  slideAction.play();
+  walkingAction.crossFadeTo(slideAction, 0.5, false); // Faz uma transição suave entre as animações
+  walkingAction.stop(); // Para a animação anterior
+  slideAction.play(); // Inicia a animação de deslize
 
-  setTimeout(() => {
+  // Após 0.5 segundos, faz uma transição suave entre as animações
+  setTimeout(() => { 
     slideAction.crossFadeTo(walkingAction, 0.5, false);
     slideAction.stop();
     walkingAction.play();
-  }, 0.5 * 1000);  
-
+  }, 500);  
 }
